@@ -17,13 +17,9 @@ public class Bootstrap implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        Message<Events> message1 = MessageBuilder.withPayload(Events.E1).build();
-        Message<Events> message2 = MessageBuilder.withPayload(Events.E2).build();
+        Message<Events> message1 = MessageBuilder.withPayload(Events.OnRun).build();
 
-//        stateMachine.sendEvent(Mono.just(message1)).subscribe();
-//        stateMachine.sendEvent(Mono.just(message2)).subscribe();
-
-        stateMachine.sendEvents(Flux.just(message1, message2)).subscribe();
+        stateMachine.sendEvents(Flux.just(message1, message1, message1, message1)).subscribe();
 
         System.out.println("final state: " + stateMachine.getState().getId());
     }

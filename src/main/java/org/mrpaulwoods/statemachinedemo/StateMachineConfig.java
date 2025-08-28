@@ -1,5 +1,12 @@
 package org.mrpaulwoods.statemachinedemo;
 
+import lombok.RequiredArgsConstructor;
+import org.mrpaulwoods.statemachinedemo.actions.NewToScrappedAction;
+import org.mrpaulwoods.statemachinedemo.actions.ProcessedToDoneAction;
+import org.mrpaulwoods.statemachinedemo.actions.ScrappedToProcessedAction;
+import org.mrpaulwoods.statemachinedemo.guards.NewToScrappedGuard;
+import org.mrpaulwoods.statemachinedemo.guards.ProcessedToDoneGuard;
+import org.mrpaulwoods.statemachinedemo.guards.ScrappedToProcessedGuard;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.action.Action;
@@ -8,16 +15,21 @@ import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter
 import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
-import org.springframework.statemachine.guard.Guard;
-import org.springframework.statemachine.listener.StateMachineListener;
-import org.springframework.statemachine.listener.StateMachineListenerAdapter;
-import org.springframework.statemachine.state.State;
 
 import java.util.EnumSet;
 
 @Configuration
 @EnableStateMachine
+@RequiredArgsConstructor
 public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<States, Events> {
+
+    private final Listener listener;
+    private final NewToScrappedGuard newToScrappedGuard;
+    private final ScrappedToProcessedGuard scrappedToProcessedGuard;
+    private final NewToScrappedAction newToScrappedAction;
+    private final ScrappedToProcessedAction scrappedToProcessedAction;
+    private final ProcessedToDoneGuard processedToDoneGuard;
+    private final ProcessedToDoneAction processedToDoneAction;
 
     @Override
     public void configure(StateMachineConfigurationConfigurer<States, Events> configConfigurer)
@@ -25,7 +37,7 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<States
         configConfigurer
                 .withConfiguration()
                 .autoStartup(true)
-                .listener(listener());
+                .listener(listener);
     }
 
     @Override
@@ -33,8 +45,8 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<States
             throws Exception {
         stateConfigurer
                 .withStates()
-                .initial(States.SI)
-                .end(States.SF)
+                .initial(States.NEW)
+                .end(States.DONE)
                 .states(EnumSet.allOf(States.class));
     }
 
@@ -44,63 +56,31 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<States
         transitionConfigurer
 
                 .withExternal()
-                .source(States.SI)
-                .target(States.S1)
-                .event(Events.E1)
-                .guard(guard())
-                .action(action(), errorAction())
+                .source(States.NEW)
+                .event(Events.OnRun)
+                .target(States.SCRAPPED)
+                .guard(newToScrappedGuard)
+                .action(newToScrappedAction, errorAction())
 
                 .and()
 
                 .withExternal()
-                .source(States.S1)
-                .target(States.S2)
-                .event(Events.E2)
-                .guard(guard())
-                .action(action(), errorAction());
-    }
+                .source(States.SCRAPPED)
+                .event(Events.OnRun)
+                .target(States.PROCESSED)
+                .guard(scrappedToProcessedGuard)
+                .action(scrappedToProcessedAction, errorAction())
 
-    @Bean
-    public StateMachineListener<States, Events> listener() {
-        return new StateMachineListenerAdapter<>() {
-            @Override
-            public void stateChanged(State<States, Events> from, State<States, Events> to) {
-                System.out.println("State change to " + to.getId());
-            }
-        };
-    }
+                .and()
 
-    @Bean
-    public Guard<States, Events> guard() {
-        return context -> {
+                .withExternal()
+                .source(States.PROCESSED)
+                .event(Events.OnRun)
+                .target(States.DONE)
+                .guard(processedToDoneGuard)
+                .action(processedToDoneAction, errorAction())
+        ;
 
-            boolean ret = context.getEvent() != Events.E2;
-
-            System.out.printf(
-                    "guarding event: %s : %s -> %s : %s%n", context.getEvent(),
-                    context.getSource().getId(),
-                    context.getTarget().getId(),
-                    ret);
-
-            return ret;
-        };
-
-    }
-
-    @Bean
-    public Action<States, Events> action() {
-        return context -> {
-
-            System.out.printf(
-                    "action event: %s : %s -> %s%n", context.getEvent(),
-                    context.getSource().getId(),
-                    context.getTarget().getId());
-
-            if (context.getEvent() == Events.E1) {
-                throw new RuntimeException("simulated error");
-            }
-
-        };
     }
 
     @Bean
