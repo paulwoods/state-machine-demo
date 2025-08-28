@@ -4,20 +4,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.mrpaulwoods.statemachinedemo.Events;
 import org.mrpaulwoods.statemachinedemo.States;
 import org.springframework.statemachine.StateContext;
-import org.springframework.statemachine.guard.Guard;
+import org.springframework.statemachine.guard.ReactiveGuard;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 @Component
 @Slf4j
-public class NewToScrappedGuard implements Guard<States, Events> {
+public class NewToScrappedGuard implements ReactiveGuard<States, Events> {
+
     @Override
-    public boolean evaluate(StateContext<States, Events> context) {
-        log.info("NewToScrappedGuard event: {} : {} -> {}",
-                context.getEvent(),
-                context.getSource().getId(),
-                context.getTarget().getId());
+    public Mono<Boolean> apply(StateContext<States, Events> context) {
+        return Mono.fromCallable(() -> {
+            log.info("NewToScrappedGuard event: {} : {} -> {}",
+                    context.getEvent(),
+                    context.getSource().getId(),
+                    context.getTarget().getId());
 
-        return true;
+            return true;
+        });
     }
-
 }

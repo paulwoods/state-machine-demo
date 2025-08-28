@@ -4,18 +4,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.mrpaulwoods.statemachinedemo.Events;
 import org.mrpaulwoods.statemachinedemo.States;
 import org.springframework.statemachine.StateContext;
-import org.springframework.statemachine.action.Action;
+import org.springframework.statemachine.action.ReactiveAction;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 @Component
 @Slf4j
-public class NewToScrappedAction implements Action<States, Events> {
+public class NewToScrappedAction implements ReactiveAction<States, Events> {
+
     @Override
-    public void execute(StateContext<States, Events> context) {
-        log.info("NewToScrappedAction: {} : {} -> {}",
+    public Mono<Void> apply(StateContext<States, Events> context) {
+        return Mono.fromRunnable(() -> log.info("NewToScrappedAction: {} : {} -> {}",
                 context.getEvent(),
                 context.getSource().getId(),
-                context.getTarget().getId());
-    }
+                context.getTarget().getId()));
 
+    }
 }

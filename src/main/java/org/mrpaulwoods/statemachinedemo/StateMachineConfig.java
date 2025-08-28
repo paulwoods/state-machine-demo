@@ -59,8 +59,8 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<States
                 .source(States.NEW)
                 .event(Events.OnRun)
                 .target(States.SCRAPPED)
-                .guard(newToScrappedGuard)
-                .action(newToScrappedAction, errorAction())
+                .guard(context -> Boolean.TRUE.equals(newToScrappedGuard.apply(context).block()))
+                .actionFunction(newToScrappedAction)
 
                 .and()
 
@@ -68,8 +68,8 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<States
                 .source(States.SCRAPPED)
                 .event(Events.OnRun)
                 .target(States.PROCESSED)
-                .guard(scrappedToProcessedGuard)
-                .action(scrappedToProcessedAction, errorAction())
+                .guard(context -> Boolean.TRUE.equals(scrappedToProcessedGuard.apply(context).block()))
+                .actionFunction(scrappedToProcessedAction)
 
                 .and()
 
@@ -77,8 +77,8 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<States
                 .source(States.PROCESSED)
                 .event(Events.OnRun)
                 .target(States.DONE)
-                .guard(processedToDoneGuard)
-                .action(processedToDoneAction, errorAction())
+                .guard(context -> Boolean.TRUE.equals(processedToDoneGuard.apply(context).block()))
+                .actionFunction(processedToDoneAction)
         ;
 
     }
